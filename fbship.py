@@ -83,24 +83,24 @@ for id in page_id:
                 if 'error' in dataa:
                     raise Exception(dataa['error']['message'])
                 
-                print ("Counting reactions")
                 for react in dataa['data']:
-                    if react['type'] == 'like':
+                    if react['type'] == 'LIKE':
                         like_count +=1
-                    if react['type'] == 'love':
+                    if react['type'] == 'LOVE':
                         love_count +=1
-                    if react['type'] == 'wow':
+                    if react['type'] == 'WOW':
                         wow_count +=1
-                    if react['type'] == 'haha':
+                    if react['type'] == 'HAHA':
                         haha_count +=1
-                    if react['type'] == 'sad':
+                    if react['type'] == 'SAD':
                         sad_count +=1
-                    if react['type'] == 'angry':
+                    if react['type'] == 'ANGRY':
                         angry_count +=1
-                    if react['type'] == 'pride':
+                    if react['type'] == 'PRIDE':
                         pride_count +=1
                 if 'paging' in dataa and 'next' in dataa['paging']:
                     ra = requests.get(dataa['paging']['next'])
+                    print ("No. of likes:",like_count)
                 else:
                     break
         
@@ -141,7 +141,10 @@ for id in page_id:
             if 'error' in datac:
                 raise Exception(datac['error']['message'])
             print ("Getting no. of shares")
-            share_list.append(datac['shares']['count'])
+            try:
+                share_list.append(datac['shares']['count'])
+            except:
+                share_list.append("NULL")
             m += 1
         
         # Get even more posts
@@ -153,7 +156,7 @@ for id in page_id:
 
 #Now that we have the list of messages with all the likes, shares and comments, put them into a dictionary!
 condict = {'Post ID':post_id_list, 'Message':msg_list, 'Likes':like_list, 'Love':love_list, 'Wow':wow_list, 'Haha':haha_list, 'Sad':sad_list, 'Angry':angry_list, 'Pride':pride_list, 'No. Comments':comment_list, 'No. Shares':share_list}
-df = pd.DataFrame(condict, index=False, columns=['Post ID','Message','Likes','Love','Wow','Haha','Sad','Angry','Pride','No. Comments','No. Shares'])
+df = pd.DataFrame(condict, index=post_id_list, columns=['Post ID','Message','Likes','Love','Wow','Haha','Sad','Angry','Pride','No. Comments','No. Shares'])
 print ("Look here!")
 df.head()
 
@@ -162,7 +165,4 @@ print ("Saving file...")
 writer = pd.ExcelWriter('Search results.xlsx', engine='xlsxwriter')
 df.to_excel(writer, sheet_name=searchkey)
 writer.save()
-
-#Let's save it to a csv file as well
-df.to_csv('C:\Pye', na_rep='Nil')
 
