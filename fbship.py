@@ -2,18 +2,20 @@ import requests
 import pandas as pd
 
 graph_api_version = 'v2.9'
-access_token = 'your token here'
+access_token = input("Copy and paste your Facebook access token here:")
 
 # Get a generic url here, we are gonna use it a few times
 url = 'https://graph.facebook.com/{}/'.format(graph_api_version)
 
 # I happily added an input function just so you can get a search term at will
-searchkey = input("enter your keyword here:")
+searchkey = input("Enter your keyword here:")
 search_url = 'search?type=page&q={}'.format(searchkey)
 page_id=[]
 iddict={}
+print ("Just so you know, the process will take a few minutes. Please be patient...")
 
 r = requests.get(url+search_url, params={'access_token': access_token})
+print ("Getting page IDs now...")
 while True:
     data = r.json()
 
@@ -31,83 +33,136 @@ while True:
     else:
         break
 
-# Put the list in Dataframe and then preview
-df = pd.Dataframe(page_id)
-df.head()
+#Create a list for each id
+post_id_list = []
+msg_list = []
+like_list=[]
+love_list=[]
+haha_list=[]
+wow_list=[]
+sad_list=[]
+angry_list=[]
+pride_list=[]
+comment_list=[]
+share_list=[]
+print ("Done! Moving on to individual posts per ID...")
+n = 0
 
 #Now we get the posts for each id
 for id in page_id:
+    n += 1
     r = requests.get(url+id+'/feed', params={'access_token': access_token})
-    data = r.json()
-    
-    # catch errors returned by the Graph API, we always try to
-    if 'error' in data:
-        raise Exception(data['error']['message'])
-    
-    #Create a list for each id
-    condict = {}
-        
-    #Extract the message
-    for msg in data['data']:
-        condict['Post_id']= post_id =msg['id']   
-        condict['Post']=msg['message']     
-        
-        #Now get stuff from the post itself
-        #First we do reactions
-        #Initialize some stuff
-        like_count = haha_count = love_count = wow_count = sad_count = angry_count = pride_count = 0
-        comment_count = 0
-        r = requests.get(url+post_id+'/reactions', params={'access_token': access_token})
-        while True:
-            data = r.json()
-    
-            # catch errors returned by the Graph API, we always try to
-            if 'error' in data:
-                raise Exception(data['error']['message'])
-   
-            for react in data['data']:
-                if react['type'] == 'like':
-                    like_count +=1
-                if react['type'] == 'love':
-                    love_count +=1
-                if react['type'] == 'wow':
-                    wow_count +=1
-                if react['type'] == 'haha':
-                    haha_count +=1
-                if react['type'] == 'sad':
-                    sad_count +=1
-                if react['type'] == 'angry':
-                    angry_count +=1
-                if react['type'] == 'pride':
-                    pride_count +=1
-            if 'paging' in data and 'next' in data['paging']:
-                r = requests.get(data['paging']['next'])
-            else:
-                break
-        reactions = {'Like':like_count,'Love':love_count,'Wow':wow_count,'Haha':haha_count,'Sad':sad_count,'Angry':angry_count,'Pride':pride_count}
-        condict.update(reactions)
-        
-        #Then we get comments, but we'll just get the total count
-        r = requests.get(url+post_id+'/reactions', params={'access_token': access_token})
-        while True:
-            data = r.json()            
-            # catch errors returned by the Graph API, we always try to
-            if 'error' in data:
-                raise Exception(data['error']['message'])
-            for comm in data['data']:
-                comment_count +=1
-            if 'paging' in data and 'next' in data['paging']:
-                r = requests.get(data['paging']['next'])
-            else:
-                break
-        condict['Comments']=comment_count
-        #Last but not least, get the shares
-        r = requests.get(url+post_id+'?fields=shares', params={'access_token': access_token})
+    print ("Going through ",n," page(s) now...")
+    m=0
+    while True:
         data = r.json()
+    
+        # catch errors returned by the Graph API, we always try to
         if 'error' in data:
             raise Exception(data['error']['message'])
-        condict['Shares']=data['shares']['count']}
-    #Append the generated information into the database
-    df = df.append({'Message':'Like':like_count,'Love':love_count,'Wow':wow_count,'Haha':haha_count,'Sad':sad_count,'Angry':angry_count,'Pride':pride_count,'Comments':comment_count,'Shares':data['shares']['count']}, ignore_index=True)
+
+        #Extract the message
+        for msg in data['data']:
+            post_id =msg['id']
+            post_id_list.append(post_id)
+            impmsg=msg.get('message','NULL')
+            msg_list.append(impmsg)
+            print ("Going through ",m," post...")
+            
+            #Now get stuff from the post itself
+            #First we do reactions
+            #Initialize some stuff
+            like_count = haha_count = love_count = wow_count = sad_count = angry_count = pride_count = 0
+            comment_count = 0
+            
+            ra = requests.get(url+post_id+'/reactions', params={'access_token': access_token})
+            while True:
+                dataa = ra.json()
     
-   
+                # catch errors returned by the Graph API, we always try to
+                if 'error' in dataa:
+                    raise Exception(dataa['error']['message'])
+                
+                print ("Counting reactions")
+                for react in dataa['data']:
+                    if react['type'] == 'like':
+                        like_count +=1
+                    if react['type'] == 'love':
+                        love_count +=1
+                    if react['type'] == 'wow':
+                        wow_count +=1
+                    if react['type'] == 'haha':
+                        haha_count +=1
+                    if react['type'] == 'sad':
+                        sad_count +=1
+                    if react['type'] == 'angry':
+                        angry_count +=1
+                    if react['type'] == 'pride':
+                        pride_count +=1
+                if 'paging' in dataa and 'next' in dataa['paging']:
+                    ra = requests.get(dataa['paging']['next'])
+                else:
+                    break
+        
+            #Filter out the 'unpopular' posts
+            if sum([like_count,love_count,wow_count,haha_count,sad_count,angry_count,pride_count]) <100:
+                del post_id_list[-1]
+                del msg_list[-1]
+                print ("One post down the drain!")
+                continue
+            else:
+                like_list.append(like_count)
+                love_list.append(love_count)
+                haha_list.append(haha_count)
+                wow_list.append(wow_count)
+                sad_list.append(sad_count)
+                angry_list.append(angry_count)
+                pride_list.append(pride_count)
+        
+            #Then we get comments, but we'll just get the total count
+            rb = requests.get(url+post_id+'/reactions', params={'access_token': access_token})
+            while True:
+                datab = rb.json()            
+                # catch errors returned by the Graph API, we always try to
+                if 'error' in datab:
+                    raise Exception(datab['error']['message'])
+                print ("Counting no. of comments")
+                for comm in datab['data']:
+                    comment_count +=1
+                if 'paging' in datab and 'next' in datab['paging']:
+                    rb = requests.get(datab['paging']['next'])
+                else:
+                    break
+            comment_list.append(comment_count)
+
+            #Last but not least, get the shares
+            rc = requests.get(url+post_id+'?fields=shares', params={'access_token': access_token})
+            datac = rc.json()
+            if 'error' in datac:
+                raise Exception(datac['error']['message'])
+            print ("Getting no. of shares")
+            share_list.append(datac['shares']['count'])
+            m += 1
+        
+        # Get even more posts
+        if 'paging' in data and 'next' in data['paging']:
+            r = requests.get(data['paging']['next'])
+        
+        else:
+            break
+
+#Now that we have the list of messages with all the likes, shares and comments, put them into a dictionary!
+condict = {'Post ID':post_id_list, 'Message':msg_list, 'Likes':like_list, 'Love':love_list, 'Wow':wow_list, 'Haha':haha_list, 'Sad':sad_list, 'Angry':angry_list, 'Pride':pride_list, 'No. Comments':comment_list, 'No. Shares':share_list}
+df = pd.DataFrame(condict, index=False, columns=['Post ID','Message','Likes','Love','Wow','Haha','Sad','Angry','Pride','No. Comments','No. Shares'])
+print ("Look here!")
+df.head()
+
+print ("Saving file...")
+#Last but not least, write it to a excel file
+writer = pd.ExcelWriter('Search results.xlsx', engine='xlsxwriter')
+df.to_excel(writer, sheet_name=searchkey)
+writer.save()
+
+#Let's save it to a csv file as well
+df.to_csv('C:\Pye', na_rep='Nil')
+
