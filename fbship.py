@@ -34,8 +34,11 @@ while True:
         break
 
 #Create a list for each id
+indx_list=[]
 post_id_list = []
+id_ext_list=[]
 msg_list = []
+postlink_list=[]
 like_list=[]
 love_list=[]
 haha_list=[]
@@ -53,7 +56,7 @@ for id in page_id:
     n += 1
     r = requests.get(url+id+'/feed', params={'access_token': access_token})
     print ("Going through ",n," page(s) now...")
-    m=0
+    m=1
     while True:
         data = r.json()
     
@@ -64,9 +67,7 @@ for id in page_id:
         #Extract the message
         for msg in data['data']:
             post_id =msg['id']
-            post_id_list.append(post_id)
             impmsg=msg.get('message','NULL')
-            msg_list.append(impmsg)
             print ("Going through ",m," post...")
             
             #Now get stuff from the post itself
@@ -106,8 +107,6 @@ for id in page_id:
         
             #Filter out the 'unpopular' posts
             if sum([like_count,love_count,wow_count,haha_count,sad_count,angry_count,pride_count]) <100:
-                del post_id_list[-1]
-                del msg_list[-1]
                 print ("One post down the drain!")
                 continue
             else:
@@ -118,6 +117,11 @@ for id in page_id:
                 sad_list.append(sad_count)
                 angry_list.append(angry_count)
                 pride_list.append(pride_count)
+                post_id_list.append(post_id)
+                msg_list.append(impmsg)
+                postlink_list.append("http://www.facebook.com/"+post_id)
+                id_ext_list.append(id)
+                indx_list.append(str(n)+'-'+str(m))
         
             #Then we get comments, but we'll just get the total count
             rb = requests.get(url+post_id+'/reactions', params={'access_token': access_token})
@@ -144,7 +148,7 @@ for id in page_id:
             try:
                 share_list.append(datac['shares']['count'])
             except:
-                share_list.append("NULL")
+                share_list.append(0)
             m += 1
         
         # Get even more posts
@@ -155,10 +159,8 @@ for id in page_id:
             break
 
 #Now that we have the list of messages with all the likes, shares and comments, put them into a dictionary!
-condict = {'Post ID':post_id_list, 'Message':msg_list, 'Likes':like_list, 'Love':love_list, 'Wow':wow_list, 'Haha':haha_list, 'Sad':sad_list, 'Angry':angry_list, 'Pride':pride_list, 'No. Comments':comment_list, 'No. Shares':share_list}
-df = pd.DataFrame(condict, index=post_id_list, columns=['Post ID','Message','Likes','Love','Wow','Haha','Sad','Angry','Pride','No. Comments','No. Shares'])
-print ("Look here!")
-df.head()
+condict = {'ID':id_ext_list, 'Post ID':post_id_list, 'Message':msg_list, 'Likes':like_list, 'Love':love_list, 'Wow':wow_list, 'Haha':haha_list, 'Sad':sad_list, 'Angry':angry_list, 'Pride':pride_list, 'No. Comments':comment_list, 'No. Shares':share_list, 'Facebook link':postlink_list}
+df = pd.DataFrame(condict, index=indx_list, columns=['ID','Post ID','Message','Likes','Love','Wow','Haha','Sad','Angry','Pride','No. Comments','No. Shares','Facebook link'])
 
 print ("Saving file...")
 #Last but not least, write it to a excel file
