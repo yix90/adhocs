@@ -1,2 +1,3 @@
-# lifehacks
-Random projects that I do for Zhenghui
+# Outside Projects
+
+From time to time I request and receive project assignments. I post them here.
