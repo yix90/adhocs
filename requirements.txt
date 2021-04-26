@@ -155,7 +155,7 @@ statsmodels @ file:///home/conda/feedstock_root/build_artifacts/statsmodels_1612
 sympy==1.4
 tblib @ file:///home/conda/feedstock_root/build_artifacts/tblib_1616261298899/work
 tensorboard==1.13.1
-tensorflow==1.13.1
+tensorflow==2.4.0
 tensorflow-estimator==1.13.0
 termcolor==1.1.0
 terminado @ file:///home/conda/feedstock_root/build_artifacts/terminado_1609794176029/work
